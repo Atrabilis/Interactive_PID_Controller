@@ -11,6 +11,7 @@ BAUD_RATE = 9600
 MAX_POINTS = 50
 
 class RealTimeGraph(QtWidgets.QWidget):
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -30,8 +31,24 @@ class RealTimeGraph(QtWidgets.QWidget):
         self.latest_data = None
         self.lock = threading.Lock()
 
+    def update_ref(self):
+        ref = self.ref_input.text()  # Aquí es donde 'ref' debe ser definido, obteniendo el texto del QLineEdit.
+        command = f"T{ref}\n"  # El prefijo 'T' es para "Target" (Objetivo)
+        self.serial.write(command.encode())
+        
     def init_ui(self):
         self.layout = QtWidgets.QVBoxLayout(self)
+
+        # Entrada de la posición de referencia
+        self.ref_layout = QtWidgets.QHBoxLayout()
+        self.ref_input = QtWidgets.QLineEdit(self)
+        self.ref_button = QtWidgets.QPushButton('Set Target', self)
+        self.ref_button.clicked.connect(self.update_ref)
+
+        self.ref_layout.addWidget(QtWidgets.QLabel("Target:"))
+        self.ref_layout.addWidget(self.ref_input)
+        self.ref_layout.addWidget(self.ref_button)
+        self.layout.addLayout(self.ref_layout)
 
         # Parámetros PID
         self.pid_layout = QtWidgets.QHBoxLayout()
@@ -92,6 +109,8 @@ class RealTimeGraph(QtWidgets.QWidget):
         command = f"P{p},I{i},D{d},W{windup}\n"  # Incluir estado del anti-windup en el comando
         self.serial.write(command.encode())
 
+
+    
     def read_from_port(self, ser):
         while True:
             line = ser.readline().decode('utf-8').strip()
