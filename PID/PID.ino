@@ -18,6 +18,10 @@ float ki = 3;
 float kd = .5;
 int target = 300; // Valor inicial para la referencia
 
+String inputString = "";         // Una cadena para almacenar los mensajes entrantes
+bool stringComplete = false;     // ¿Se ha recibido toda la cadena?
+int target = 300;                  // Posición de referencia
+
 void setup() {
   Serial.begin(9600);
   pinMode(ENCA, INPUT);
@@ -29,6 +33,7 @@ void setup() {
   pinMode(IN2, OUTPUT);
 
   Serial.println("Ready for PID parameters.");
+  inputString.reserve(200);
 }
 
 void loop() {
@@ -71,7 +76,19 @@ void loop() {
   setMotor(dir, pwr, PWM, IN1, IN2);
 
   eprev = e;
-
+  if (stringComplete) {
+    // Parsear la cadena recibida aquí
+    if(inputString.startsWith("T")) {
+      target = inputString.substring(1).toInt();
+      Serial.print("Target updated: ");
+      Serial.println(target);
+    } else {
+      // Parsear otros comandos si los hay
+    }
+    // Limpiar la cadena para la próxima lectura
+    inputString = "";
+    stringComplete = false;
+  }
   Serial.print(target);
   Serial.print(" ");
   Serial.print(pos);
@@ -100,6 +117,16 @@ void setMotor(int dir, int pwmVal, int pwm, int in1, int in2) {
 void readEncoder() {
   int b = digitalRead(ENCB);
   posi += (b > 0) ? 1 : -1;
+}
+
+void serialEvent() {
+  while (Serial.available()) {
+    char inChar = (char)Serial.read();
+    inputString += inChar;
+    if (inChar == '\n') {
+      stringComplete = true;
+    }
+  }
 }
 
 void parseAndUpdatePID(String data) {
