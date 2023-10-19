@@ -16,6 +16,7 @@ bool antiWindupEnabled = true;
 float kp = 5; // Valores iniciales para los parámetros PID
 float ki = 3;
 float kd = .5;
+int target = 300; // Valor inicial para la referencia
 
 void setup() {
   Serial.begin(9600);
@@ -35,8 +36,6 @@ void loop() {
     String receivedData = Serial.readStringUntil('\n');
     parseAndUpdatePID(receivedData);
   }
-
-  int target = 300;
 
   long currT = micros();
   float deltaT = ((float)(currT - prevT)) / (1e6);
@@ -110,6 +109,7 @@ void parseAndUpdatePID(String data) {
   float newPidValues[3] = {kp, ki, kd}; // Inicializa con valores actuales
   bool pidValuesReceived[3] = {false, false, false}; // Monitorea qué valores se recibieron
   bool windupCommandReceived = false;
+  bool referenceReceived = false; // Flag para el nuevo valor de referencia
 
   ptr = strtok(inputChars, ",");
   while (ptr != NULL) {
@@ -126,6 +126,9 @@ void parseAndUpdatePID(String data) {
     } else if (pidValue.startsWith("W")) {
       antiWindupEnabled = pidValue.substring(1).toInt() == 1;
       windupCommandReceived = true;
+    } else if (pidValue.startsWith("R") && pidValue.length() > 1) { // Parsea el nuevo valor de referencia
+      target = pidValue.substring(1).toInt();
+      referenceReceived = true;
     }
     ptr = strtok(NULL, ",");
   }
@@ -142,5 +145,10 @@ void parseAndUpdatePID(String data) {
 
   if (windupCommandReceived) {
     Serial.print("Anti-windup command received - Status: "); Serial.println(antiWindupEnabled ? "Enabled" : "Disabled");
+  }
+
+  if (referenceReceived) { // Si se recibió un nuevo valor de referencia, confírmalo
+    Serial.print("New reference received: ");
+    Serial.println(target);
   }
 }

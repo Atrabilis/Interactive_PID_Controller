@@ -38,9 +38,12 @@ class RealTimeGraph(QtWidgets.QWidget):
         self.p_input = QtWidgets.QLineEdit(self)
         self.i_input = QtWidgets.QLineEdit(self)
         self.d_input = QtWidgets.QLineEdit(self)
+        self.ref_input = QtWidgets.QLineEdit(self)  # Entrada para la referencia
         self.windup_checkbox = QtWidgets.QCheckBox('Anti-windup Enable', self)  # Checkbox para el anti-windup
         self.pid_button = QtWidgets.QPushButton('Set PID', self)
+        self.ref_button = QtWidgets.QPushButton('Set Reference', self)  # Botón para establecer la referencia
         self.pid_button.clicked.connect(self.update_pid)
+        self.ref_button.clicked.connect(self.update_reference)  # Conectar botón con la función de actualización de referencia
 
         self.pid_layout.addWidget(QtWidgets.QLabel("P:"))
         self.pid_layout.addWidget(self.p_input)
@@ -48,8 +51,11 @@ class RealTimeGraph(QtWidgets.QWidget):
         self.pid_layout.addWidget(self.i_input)
         self.pid_layout.addWidget(QtWidgets.QLabel("D:"))
         self.pid_layout.addWidget(self.d_input)
+        self.pid_layout.addWidget(QtWidgets.QLabel("Ref:"))
+        self.pid_layout.addWidget(self.ref_input)  # Añadir entrada de referencia al layout
         self.pid_layout.addWidget(self.windup_checkbox)  # Añadir checkbox al layout
         self.pid_layout.addWidget(self.pid_button)
+        self.pid_layout.addWidget(self.ref_button)  # Añadir botón de referencia al layout
         self.layout.addLayout(self.pid_layout)
 
         # Gráficos
@@ -91,6 +97,11 @@ class RealTimeGraph(QtWidgets.QWidget):
         windup = '1' if self.windup_checkbox.isChecked() else '0'  # Estado del checkbox anti-windup
         command = f"P{p},I{i},D{d},W{windup}\n"  # Incluir estado del anti-windup en el comando
         self.serial.write(command.encode())
+
+    def update_reference(self):
+        ref = self.ref_input.text()  # Obtener el valor de la referencia del campo de entrada
+        command = f"R{ref}\n"  # Preparar el comando para enviar
+        self.serial.write(command.encode())  # Enviar el nuevo valor de referencia
 
     def read_from_port(self, ser):
         while True:
